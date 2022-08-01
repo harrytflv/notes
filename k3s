@@ -1,0 +1,4 @@
+INSTALL_K3S_VERSION=v1.18.6+k3s1 bash -c "curl -sfL https://get.k3s.io | sh -s - --docker"
+
+/usr/local/bin/k3s-uninstall.sh
+/usr/local/bin/k3s-agent-uninstall.sh

@@ -1,0 +1,11 @@
+// From staged to unstaged
+git reset
+// From commited to staged
+git reset --soft HEAD~1
+
+// Rename the local branch by typing:
+git branch -m <new_name>
+// Push the <new_name> local branch and reset the upstream branch:
+git push origin -u <new_name>
+// Delete the <old_name> remote branch:
+git push origin --delete <old_name>

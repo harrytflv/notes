@@ -1,0 +1,127 @@
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grpc
+  labels:
+    app: grpc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grpc
+  template:
+    metadata:
+      labels:
+        app: grpc
+    spec:
+      containers:
+      - name: grpc
+        image: harrytflv/grpcserver
+EOF
+
+cat <<EOF | kubectl apply -f -
+kind: Service
+apiVersion: v1
+metadata:
+  name: grpc
+spec:
+  selector:
+    app: grpc
+  ports:
+  - port: 50051
+    name: grpc
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth
+  labels:
+    app: auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth
+  template:
+    metadata:
+      labels:
+        app: auth
+    spec:
+      containers:
+      - name: auth
+        image: harrytflv/auth
+EOF
+
+cat <<EOF | kubectl apply -f -
+kind: Service
+apiVersion: v1
+metadata:
+  name: auth
+spec:
+  selector:
+    app: auth
+  ports:
+  - port: 80
+    name: auth
+EOF
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v0.40.2/deploy/static/provider/baremetal/deploy.yaml
+
+openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes \
+  -keyout alice.key -out alice.crt -subj "/CN=alice.io" \
+  -addext "subjectAltName=DNS:alice.io"
+
+kubectl create secret tls alice --cert=alice.crt --key=alice.key
+
+cat <<EOF | kubectl apply -f -
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grpc
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: GRPC
+spec:
+  tls:
+    - hosts:
+      - alice.io
+      secretName: alice
+  rules:
+  - host: alice.io
+    http:
+      paths:
+      - path: /helloworld
+        pathType: Prefix
+        backend:
+          service: 
+            name: grpc
+            port:
+              name: grpc
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: es
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /\$2
+spec:
+  tls:
+    - hosts:
+      - alice.io
+      secretName: alice
+  rules:
+  - host: alice.io
+    http:
+      paths:
+      - path: /elasticsearch(/|$)(.*)
+        pathType: Exact
+        backend:
+          service:
+            name: es-es-http
+            port:
+              number: 9200
+EOF

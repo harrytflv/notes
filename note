@@ -1,0 +1,23 @@
+curl -ki -H "Authorization: Bearer xxx" https://xxx --resolve api-staging.fortirecon.com:443:154.52.1.11
+
+// Track NAT information.
+conntrack -L
+
+// Find pod network interface on host machine.
+IFLINK=$(kubectl exec -n fortirecon apigw-6c48499d77-sb4hn -- cat "/sys/class/net/eth0/iflink")
+for i in /sys/class/net/veth*/ifindex; do grep -l $IFLINK $i; done
+
+// Get all keys and values in redis
+echo 'keys *' | redis-cli | sed 's/^/hgetall /' | redis-cli
+
+docker run -p 8888:8888 -e JUPYTER_ENABLE_LAB=yes jupyter/scipy-notebook
+
+sysctl ash
+
+admin@fortihawkeye.com
+FortiHawkeye11!
+
+https://10.106.48.129/ng/system/certificate
+admin/a
+
+kubectl port-forward cockroachdb-0 8080
